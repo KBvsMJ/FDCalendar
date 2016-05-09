@@ -8,8 +8,19 @@
 
 #import <UIKit/UIKit.h>
 
-@interface FDCalendar : UIView
+typedef void(^FDCalendarCompleteHandler) (NSString * selectedDate);
 
-- (instancetype)initWithCurrentDate:(NSDate *)date;
+@interface FDCalendar : UIView
+{
+    FDCalendarCompleteHandler calendarCompleteHandler;
+}
+/**
+ *  设置日期以及获取当前选中的日期
+ *
+ *  @param date            当前日期
+ *  @param completeHandler 回调参数
+ *
+ */
+- (instancetype)initWithCurrentDate:(NSDate *)date withSelectDateCompleteHandler:(FDCalendarCompleteHandler)completeHandler;
 
 @end

@@ -30,7 +30,7 @@ static NSDateFormatter *dateFormattor;
 
 @implementation FDCalendar
 
-- (instancetype)initWithCurrentDate:(NSDate *)date {
+- (instancetype)initWithCurrentDate:(NSDate *)date withSelectDateCompleteHandler:(FDCalendarCompleteHandler)completeHandler{
     if (self = [super init]) {
         self.backgroundColor = [UIColor colorWithRed:236 / 255.0 green:236 / 255.0 blue:236 / 255.0 alpha:1.0];
         self.date = date;
@@ -42,6 +42,7 @@ static NSDateFormatter *dateFormattor;
         [self setFrame:CGRectMake(0, 0, DeviceWidth, CGRectGetMaxY(self.scrollView.frame))];
         
         [self setCurrentDate:self.date];
+        calendarCompleteHandler = completeHandler;
     }
     return self;
 }
@@ -258,6 +259,48 @@ static NSDateFormatter *dateFormattor;
     [self hideDatePickerView];
 }
 
+//设置要显示日期格式以及修复这个库返回时间比选择的时间要少一天
+- (NSString*)formatterDealSelectDate:(NSDate *)date
+{
+    NSArray * arrOfWeek=@[@"周日",@"周一",@"周二",@"周三",@"周四",@"周五",@"周六"];
+    NSCalendar *calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian] ;
+    NSDateComponents *comps = [[NSDateComponents alloc] init] ;
+    NSInteger unitFlags = NSCalendarUnitYear |NSCalendarUnitMonth |NSCalendarUnitDay |NSCalendarUnitWeekday |NSCalendarUnitHour |
+    NSCalendarUnitMinute |NSCalendarUnitSecond;
+    
+    comps = [calendar components:unitFlags fromDate:date];
+    NSInteger week = [comps weekday];
+    NSInteger year=[comps year];
+    NSInteger month = [comps month];
+    NSInteger day = [comps day];
+    /**对月份进行处理月份的位数一位数时需要在月份前面添加“0”*/
+    NSString *monthFormatter = [NSString stringWithFormat:@"%ld",month];
+    NSString *monthDealResult = nil;
+     /**对天进行处理天的位数一位数时需要在天前面添加“0”*/
+    NSString *dayFormatter = [NSString stringWithFormat:@"%ld",day];
+      NSString *dayDealResult = nil;
+    if (monthFormatter.length == 1) {
+        monthDealResult = [NSString stringWithFormat:@"0%@",monthFormatter];
+    }
+    else
+    {
+        monthDealResult = monthFormatter;
+    }
+    if(dayFormatter.length==1)
+    {
+        dayDealResult = [NSString stringWithFormat:@"0%@",dayFormatter];
+    }
+    else{
+        dayDealResult = dayFormatter;
+    }
+    /**特殊时间格式4/27(周一)*/
+    NSString *formatterDate = [NSString stringWithFormat:@"%@/%@(%@)",monthDealResult,dayDealResult,[arrOfWeek objectAtIndex:week-1]];
+    NSString *appendDate = [NSString stringWithFormat:@"%ld-%@-%@ %@",year,monthDealResult,dayDealResult,formatterDate];
+    return appendDate;
+}
+
+
+
 #pragma mark - UIScrollViewDelegate
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
@@ -269,7 +312,11 @@ static NSDateFormatter *dateFormattor;
 
 - (void)calendarItem:(FDCalendarItem *)item didSelectedDate:(NSDate *)date {
     self.date = date;
+   
     [self setCurrentDate:self.date];
+    if (calendarCompleteHandler) {
+        calendarCompleteHandler([NSString stringWithFormat:@"%@",[self formatterDealSelectDate:self.date]]);
+    }
 }
 
 @end
